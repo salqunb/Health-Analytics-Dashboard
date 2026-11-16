@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Health Analytics Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f7f6;--text:#16212b;--mute:#5d6b78;--line:#d9e0e0;--acc:#0f766e;--track:#e6ecec;--btn:#ffffff;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10171d;--text:#e7eef3;--mute:#9fb0bd;--line:#26333d;--acc:#3fb8ab;--track:#1d2a33;--btn:#16212a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10171d;--text:#e7eef3;--mute:#9fb0bd;--line:#26333d;--acc:#3fb8ab;--track:#1d2a33;--btn:#16212a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 "Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:28px 20px 40px}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.1;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:18px;margin:0 0 2px}
+.sub{color:var(--mute);margin:0}
+.top{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:flex-end}
+.seg-ctl{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--btn)}
+button{font:inherit;border:0;background:transparent;color:var(--mute);padding:6px 14px;border-radius:999px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--acc);color:#fff;font-weight:600}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.hero{margin:28px 0 8px}
+.stack{display:flex;height:54px;border-radius:10px;overflow:hidden;gap:2px}
+.stack div{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;transition:flex-grow .4s;min-width:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:10px;color:var(--mute);font-size:14px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);margin:26px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.kpi{padding:16px 14px;border-left:1px solid var(--line)}.kpi:first-child{border-left:0;padding-left:0}
+.kpi b{display:block;font-size:30px;line-height:1.1;letter-spacing:-.02em}.kpi span{color:var(--mute);font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:34px 44px}
+section{min-width:0}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 6px}.tabs button{border:1px solid var(--line);padding:4px 11px;font-size:13px}
+.row{display:grid;grid-template-columns:104px 1fr 74px;align-items:center;gap:10px;margin:9px 0;font-size:14px}
+.tr{height:14px;background:var(--track);border-radius:7px;overflow:hidden}.tr i{display:block;height:100%;border-radius:7px;transition:width .4s}
+.vl{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}.lb{color:var(--mute)}
+footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--mute);font-size:13px}
+@media (max-width:720px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.kpi:nth-child(3){border-left:0;padding-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}.row{grid-template-columns:92px 1fr 66px}}
+@media (prefers-reduced-motion:reduce){.stack div,.tr i{transition:none}}
+</style></head><body><main>
+<div class="top"><div><h1>Health Analytics Dashboard</h1>
+<p class="sub">BMI and daily food intake of US adults, CDC NHANES 2021–2023</p></div>
+<div class="seg-ctl" id="ctl" role="group" aria-label="Filter by gender"></div></div>
+<div class="hero"><h2>How BMI is distributed</h2><p class="sub" id="heroSub"></p>
+<div class="stack" id="stack" style="margin-top:12px"></div><div class="legend" id="legend"></div></div>
+<div class="kpis" id="kpis"></div>
+<div class="grid">
+<section><h2>BMI by age group</h2><p class="sub">Average BMI in each age group</p><div id="age"></div></section>
+<section><h2>Intake by BMI group</h2><p class="sub">Average for one day of eating</p><div class="tabs" id="tabs"></div><div id="nut"></div></section>
+<section><h2>Fiber and BMI</h2><p class="sub">Average BMI by fiber intake (g per 1,000 kcal), lowest to highest quarter</p><div id="fib"></div></section>
+<section><h2>Calories and BMI</h2><p class="sub">Average BMI by total calories in the day</p><div id="cal"></div></section>
+</div>
+<footer>Unweighted sample of 4,635 adults (20+) with a measured BMI and a reliable day-1 dietary recall. Food intake comes from a single 24-hour recall, so it shows one day, not usual eating. BMI groups use WHO adult cut-offs. These are associations in survey data, not causes.</footer>
+</main>
+<script>
+const D={"All":{"n":4635,"age":55.1,"bmi":30.0,"ow":74.4,"ob":42.1,"kcal":1963,"cat":[55,1133,1494,1953],"age_bmi":[28.7,30.0,30.6,31.2,30.1,29.2],"nut":{"fiber":[15.7,18.0,16.6,14.9],"sodium":[2512.1,3047.8,3035.6,3078.8],"sugar":[22.2,18.9,19.6,19.4],"kcal":[1853.1,2009.7,1981.0,1925.1]},"fq_bmi":[31.0,30.5,29.8,28.6],"fq_rng":["0.0\u20135.4","5.5\u20137.7","7.8\u201310.8","10.9\u201346.3"],"cal_bmi":[30.3,30.0,29.7,29.8]},"Female":{"n":2600,"age":54.8,"bmi":30.4,"ow":73.3,"ob":44.2,"kcal":1753,"cat":[41,653,758,1148],"age_bmi":[29.1,30.5,30.8,31.5,30.6,29.5],"nut":{"fiber":[14.6,16.6,15.7,13.6],"sodium":[2369.2,2769.9,2652.5,2709.2],"sugar":[22.4,18.6,20.0,20.0],"kcal":[1698.9,1801.9,1771.3,1714.7]},"fq_bmi":[31.6,31.0,30.2,28.6],"fq_rng":["0.1\u20135.7","5.8\u20137.9","8.0\u201311.1","11.2\u201346.3"],"cal_bmi":[30.7,30.2,30.2,30.1]},"Male":{"n":2035,"age":55.4,"bmi":29.5,"ow":75.7,"ob":39.6,"kcal":2231,"cat":[14,480,736,805],"age_bmi":[28.0,29.4,30.4,30.7,29.5,28.9],"nut":{"fiber":[19.1,19.8,17.6,16.7],"sodium":[2930.8,3426.0,3430.2,3606.0],"sugar":[21.6,19.3,19.2,18.4],"kcal":[2304.9,2292.4,2197.0,2225.1]},"fq_bmi":[30.2,30.0,29.2,28.5],"fq_rng":["0.0\u20135.1","5.2\u20137.4","7.5\u201310.4","10.5\u201334.2"],"cal_bmi":[29.5,29.6,29.1,29.7]}};
+const CATS=["Underweight","Normal","Overweight","Obese"],COL=["#4f93c9","#2f9e6b","#e3a02f","#d9534f"];
+const AGES=["20–29","30–39","40–49","50–59","60–69","70+"],CALS=["Under 1,500","1,500–1,999","2,000–2,499","2,500+"];
+const NUT={fiber:["Fiber"," g"],sodium:["Sodium"," mg"],sugar:["Sugar"," % kcal"],kcal:["Calories"," kcal"]};
+let g="All",nut="fiber";const $=id=>document.getElementById(id);
+const f=(n,d=1)=>n.toLocaleString("en-US",{maximumFractionDigits:d});
+function bars(id,labels,vals,colors,unit){const m=Math.max(...vals)*1.12;
+$(id).innerHTML=labels.map((l,i)=>`<div class="row"><span class="lb">${l}</span><span class="tr"><i style="width:${(vals[i]/m*100).toFixed(1)}%;background:${colors[i]||colors[0]}"></i></span><span class="vl">${f(vals[i])}${unit}</span></div>`).join("")}
+function render(){const s=D[g];
+$("ctl").innerHTML=["All","Female","Male"].map(x=>`<button aria-pressed="${x===g}" data-g="${x}">${x==="All"?"All adults":x}</button>`).join("");
+$("heroSub").textContent=`${f(s.n,0)} adults, average age ${f(s.age)}`;
+const t=s.cat.reduce((a,b)=>a+b,0);
+$("stack").innerHTML=s.cat.map((v,i)=>{const p=v/t*100;return `<div style="flex-grow:${v};background:${COL[i]}" title="${CATS[i]}: ${f(p)}%">${p>=6?f(p,0)+"%":""}</div>`}).join("");
+$("legend").innerHTML=s.cat.map((v,i)=>`<span><i style="background:${COL[i]}"></i>${CATS[i]} ${f(v,0)} (${f(v/t*100)}%)</span>`).join("");
+$("kpis").innerHTML=[[f(s.n,0),"Adults in sample"],[f(s.bmi),"Average BMI"],[f(s.ow)+"%","Overweight or obese"],[f(s.kcal,0),"Average calories per day"]].map(k=>`<div class="kpi"><b>${k[0]}</b><span>${k[1]}</span></div>`).join("");
+bars("age",AGES,s.age_bmi,["var(--acc)"],"");
+$("tabs").innerHTML=Object.keys(NUT).map(k=>`<button aria-pressed="${k===nut}" data-n="${k}">${NUT[k][0]}</button>`).join("");
+bars("nut",CATS,s.nut[nut],COL,NUT[nut][1]);
+bars("fib",s.fq_rng.map(r=>r),s.fq_bmi,["var(--acc)"],"");
+bars("cal",CALS,s.cal_bmi,["var(--acc)"],"")}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+if(b.dataset.g){g=b.dataset.g;render()}else if(b.dataset.n){nut=b.dataset.n;render()}});
+render();
+</script></body></html>
